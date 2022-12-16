@@ -1,45 +1,79 @@
-#[macro_use]
-extern crate lazy_static;
-extern crate atomic_float;
+mod app;
+mod map;
 
 mod prelude {
-    use atomic_float::AtomicF32;
-    use std::sync::atomic::AtomicU32;
+    pub use sdl2::event::Event;
+    pub use sdl2::keyboard::Keycode;
+    pub use sdl2::pixels::Color;
+    pub use sdl2::rect::Rect;
+    pub use sdl2::render::Canvas;
+    pub use sdl2::video::Window;
+    pub use sdl2::EventPump;
+    pub use sdl2::Sdl;
+    pub use sdl2::TimerSubsystem;
+    pub use std::f32::consts::PI;
 
-    pub const WINDOW_WIDTH: u32 = 800;
-    pub const WINDOW_HEIGHT: u32 = 600;
+    pub const TILE_SIZE: u32 = 64;
+    pub const MAP_NUM_ROWS: u32 = 13;
+    pub const MAP_NUM_COLS: u32 = 20;
+    pub const MINIMAP_SCALE_FACTOR: f32 = 0.25;
 
-    pub static DELTA_TIME: AtomicF32 = AtomicF32::new(0.0);
-    pub static LAST_FRAME_TIME: AtomicU32 = AtomicU32::new(0);
+    pub const WINDOW_WIDTH: u32 = MAP_NUM_COLS * TILE_SIZE;
+    pub const WINDOW_HEIGHT: u32 = MAP_NUM_ROWS * TILE_SIZE;
+
+    pub const FOV_ANGLE: f32 = 60.0 * (PI / 180.0);
+
+    pub const WALL_STRIP_WIDTH: u32 = 1;
+    pub const NUM_RAYS: u32 = WINDOW_WIDTH;
+
+    pub const TEXTURE_WIDTH: u32 = TILE_SIZE;
+    pub const TEXTURE_HEIGHT: u32 = TILE_SIZE;
+    pub const NUM_TEXTURES: u32 = 8;
+
+    pub use crate::app::App;
+    pub use crate::map::Map;
 }
 
-use core::sync::atomic::Ordering;
 use prelude::*;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
-use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
-pub use sdl2::Sdl;
-use sdl2::{EventPump, TimerSubsystem};
 
-fn sdl_init() -> (Sdl, TimerSubsystem, Canvas<Window>, bool) {
-    let sdl_context: Sdl = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+const int_map: [u8; (MAP_NUM_ROWS * MAP_NUM_COLS) as usize] = [
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1,
+];
 
-    let window = video_subsystem
-        .window("Raycaster", WINDOW_WIDTH, WINDOW_HEIGHT)
-        .position_centered()
-        .build()
-        .unwrap();
+struct Player {
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    turn_direction: i32,
+    walk_direction: i32,
+    rotation_angle: f32,
+    walk_speed: f32,
+    turn_speed: f32,
+}
 
-    let timer = sdl_context.timer().unwrap();
-
-    let mut renderer = window.into_canvas().software().build().unwrap();
-    renderer.set_blend_mode(sdl2::render::BlendMode::Blend);
-
-    (sdl_context, timer, renderer, true)
+impl Player {
+    fn new() -> Self {
+        Player {
+            x: WINDOW_WIDTH as f32 / 2.0,
+            y: WINDOW_HEIGHT as f32 / 2.0,
+            width: 5.0,
+            height: 5.0,
+            turn_direction: 0,
+            walk_direction: 0,
+            rotation_angle: PI / 2.0,
+            walk_speed: 100.0,
+            turn_speed: 45.0 * (PI / 100.0),
+        }
+    }
 }
 
 fn process_input(event_pump: &mut EventPump, running: &mut bool) {
@@ -55,39 +89,37 @@ fn process_input(event_pump: &mut EventPump, running: &mut bool) {
     }
 }
 
-fn render(renderer: &mut Canvas<Window>) {
-    renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
-    renderer.clear();
+fn render(app: &mut App, map: &Map) {
+    app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
+    app.renderer.clear();
 
-    renderer.set_draw_color(Color::RGBA(155, 0, 0, 255));
-    let rect: Rect = Rect::new(0, 0, 20, 20);
-    // renderer.draw_rect(rect).unwrap();
-    renderer.fill_rect(rect).unwrap();
+    // renderer.set_draw_color(Color::RGBA(155, 0, 0, 255));
+    // let rect: Rect = Rect::new(0, 0, 20, 20);
+    // // renderer.draw_rect(rect).unwrap();
+    // renderer.fill_rect(rect).unwrap();
 
-    renderer.present();
+    map.render(app);
+
+    app.renderer.present();
 }
 
 fn main() {
-    let (sdl_context, timer, mut renderer, mut running) = sdl_init();
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut app = App::new();
+    let mut event_pump = app.sdl_context.event_pump().unwrap();
 
-    while running {
-        let ticks = timer.ticks();
+    let mut player = Player::new();
+    let map = Map::new();
 
-        DELTA_TIME.store(
-            (ticks - LAST_FRAME_TIME.load(Ordering::SeqCst)) as f32 / 1000.0,
-            Ordering::SeqCst,
-        );
+    let mut delta_time: f32 = 0.0;
+    let mut last_frame_time: u32 = 0;
+    while app.is_running {
+        let ticks = app.timer.ticks();
 
-        LAST_FRAME_TIME.store(ticks, Ordering::SeqCst);
+        delta_time = (ticks - last_frame_time) as f32 / 1000.0;
+        last_frame_time = ticks;
+        // println!("{} {} {}", delta_time, last_frame_time, ticks);
 
-        println!(
-            "{} {} {}",
-            DELTA_TIME.load(Ordering::SeqCst),
-            LAST_FRAME_TIME.load(Ordering::SeqCst),
-            ticks
-        );
-        process_input(&mut event_pump, &mut running);
-        render(&mut renderer);
+        process_input(&mut event_pump, &mut app.is_running);
+        render(&mut app, &map);
     }
 }
