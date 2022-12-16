@@ -139,6 +139,7 @@ fn main() {
         );
 
         player.update(delta_time, &map);
+        // cast_all_rays();
 
         render(&mut app, &map, &player);
     }

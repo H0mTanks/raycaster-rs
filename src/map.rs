@@ -33,6 +33,14 @@ impl Map {
         self.data[Map::index(x as usize, y as usize)] = val;
     }
 
+    pub fn has_wall_at(&self, x: f32, y: f32) -> bool {
+        if x < 0.0 || y < 0.0 || x as u32 >= WINDOW_WIDTH || y as u32 >= WINDOW_HEIGHT {
+            return true;
+        }
+
+        self.get(x as u32 / TILE_SIZE, y as u32 / TILE_SIZE) != 0
+    }
+
     pub fn render(&self, app: &mut App) {
         for i in 0..MAP_NUM_COLS {
             for j in 0..MAP_NUM_ROWS {

@@ -71,9 +71,9 @@ impl Player {
         let new_player_x = self.x + f32::cos(self.rotation_angle) * move_step;
         let new_player_y = self.y + f32::sin(self.rotation_angle) * move_step;
 
-        //TODO: collisions
-
-        self.x = new_player_x;
-        self.y = new_player_y;
+        if !map.has_wall_at(new_player_x, new_player_y) {
+            self.x = new_player_x;
+            self.y = new_player_y;
+        }
     }
 }
