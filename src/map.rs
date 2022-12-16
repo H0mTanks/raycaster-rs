@@ -26,7 +26,6 @@ impl Map {
     }
 
     pub fn get(&self, x: u32, y: u32) -> u8 {
-        println!("{} {}", x, y);
         self.data[Map::index(x as usize, y as usize)]
     }
 
@@ -37,13 +36,22 @@ impl Map {
     pub fn render(&self, app: &mut App) {
         for i in 0..MAP_NUM_COLS {
             for j in 0..MAP_NUM_ROWS {
+                let tile_color = if self.get(i, j) != 0 { 255 } else { 0 };
+
                 let tile_x: i32 = (i * TILE_SIZE) as i32;
                 let tile_y: i32 = (j * TILE_SIZE) as i32;
-                let tile_color = if self.get(i, j) != 0 { 255 } else { 0 };
+                let scaled_tile_x = (tile_x as f32 * MINIMAP_SCALE_FACTOR) as i32;
+                let scaled_tile_y = (tile_y as f32 * MINIMAP_SCALE_FACTOR) as i32;
+                let scaled_tile_size = (TILE_SIZE as f32 * MINIMAP_SCALE_FACTOR) as u32;
 
                 app.renderer
                     .set_draw_color(Color::RGBA(tile_color, tile_color, tile_color, 255));
-                let map_tile_rect = Rect::new(tile_x, tile_y, TILE_SIZE, TILE_SIZE);
+                let map_tile_rect = Rect::new(
+                    scaled_tile_x,
+                    scaled_tile_y,
+                    scaled_tile_size,
+                    scaled_tile_size,
+                );
 
                 app.renderer.fill_rect(map_tile_rect).unwrap();
             }

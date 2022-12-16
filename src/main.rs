@@ -1,5 +1,6 @@
 mod app;
 mod map;
+mod player;
 
 mod prelude {
     pub use sdl2::event::Event;
@@ -16,7 +17,7 @@ mod prelude {
     pub const TILE_SIZE: u32 = 64;
     pub const MAP_NUM_ROWS: u32 = 13;
     pub const MAP_NUM_COLS: u32 = 20;
-    pub const MINIMAP_SCALE_FACTOR: f32 = 0.25;
+    pub const MINIMAP_SCALE_FACTOR: f32 = 1.0;
 
     pub const WINDOW_WIDTH: u32 = MAP_NUM_COLS * TILE_SIZE;
     pub const WINDOW_HEIGHT: u32 = MAP_NUM_ROWS * TILE_SIZE;
@@ -32,6 +33,7 @@ mod prelude {
 
     pub use crate::app::App;
     pub use crate::map::Map;
+    pub use crate::player::Player;
 }
 
 use prelude::*;
@@ -48,48 +50,59 @@ const int_map: [u8; (MAP_NUM_ROWS * MAP_NUM_COLS) as usize] = [
     1, 1, 1, 1,
 ];
 
-struct Player {
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    turn_direction: i32,
-    walk_direction: i32,
-    rotation_angle: f32,
-    walk_speed: f32,
-    turn_speed: f32,
-}
-
-impl Player {
-    fn new() -> Self {
-        Player {
-            x: WINDOW_WIDTH as f32 / 2.0,
-            y: WINDOW_HEIGHT as f32 / 2.0,
-            width: 5.0,
-            height: 5.0,
-            turn_direction: 0,
-            walk_direction: 0,
-            rotation_angle: PI / 2.0,
-            walk_speed: 100.0,
-            turn_speed: 45.0 * (PI / 100.0),
-        }
-    }
-}
-
-fn process_input(event_pump: &mut EventPump, running: &mut bool) {
+fn process_input(
+    event_pump: &mut EventPump,
+    delta_time: f32,
+    player: &mut Player,
+    is_running: &mut bool,
+) {
     for event in event_pump.poll_iter() {
         match event {
-            Event::Quit { .. } => *running = false,
-            Event::KeyDown {
-                keycode: Some(Keycode::Escape),
-                ..
-            } => *running = false,
+            Event::Quit { .. } => *is_running = false,
+            Event::KeyDown { keycode, .. } => match keycode {
+                Some(key) => {
+                    if key == Keycode::Escape {
+                        *is_running = false;
+                    }
+                    if key == Keycode::Up {
+                        player.update_walk_direction(1);
+                    }
+                    if key == Keycode::Down {
+                        player.update_walk_direction(-1);
+                    }
+                    if key == Keycode::Right {
+                        player.update_turn_direction(1);
+                    }
+                    if key == Keycode::Left {
+                        player.update_turn_direction(-1);
+                    }
+                }
+                None => {}
+            },
+            Event::KeyUp { keycode, .. } => match keycode {
+                Some(key) => {
+                    if key == Keycode::Up {
+                        player.update_walk_direction(0);
+                    }
+                    if key == Keycode::Down {
+                        player.update_walk_direction(0);
+                    }
+                    if key == Keycode::Right {
+                        player.update_turn_direction(0);
+                    }
+                    if key == Keycode::Left {
+                        player.update_turn_direction(0);
+                    }
+                }
+                None => {}
+            },
+
             _ => {}
         }
     }
 }
 
-fn render(app: &mut App, map: &Map) {
+fn render(app: &mut App, map: &Map, player: &Player) {
     app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
     app.renderer.clear();
 
@@ -99,6 +112,7 @@ fn render(app: &mut App, map: &Map) {
     // renderer.fill_rect(rect).unwrap();
 
     map.render(app);
+    player.render(app);
 
     app.renderer.present();
 }
@@ -110,16 +124,22 @@ fn main() {
     let mut player = Player::new();
     let map = Map::new();
 
-    let mut delta_time: f32 = 0.0;
     let mut last_frame_time: u32 = 0;
     while app.is_running {
         let ticks = app.timer.ticks();
 
-        delta_time = (ticks - last_frame_time) as f32 / 1000.0;
+        let delta_time = (ticks - last_frame_time) as f32 / 1000.0;
         last_frame_time = ticks;
-        // println!("{} {} {}", delta_time, last_frame_time, ticks);
 
-        process_input(&mut event_pump, &mut app.is_running);
-        render(&mut app, &map);
+        process_input(
+            &mut event_pump,
+            delta_time,
+            &mut player,
+            &mut app.is_running,
+        );
+
+        player.update(delta_time, &map);
+
+        render(&mut app, &map, &player);
     }
 }
