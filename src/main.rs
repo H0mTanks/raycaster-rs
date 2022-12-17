@@ -98,6 +98,63 @@ fn process_input(event_pump: &mut EventPump, player: &mut Player, is_running: &m
     }
 }
 
+fn generate_projection(app: &mut App, game_state: &GameState) {
+    let (player, rays) = (&game_state.player, &game_state.rays);
+
+    for i in 0..NUM_RAYS {
+        let perp_distance: f32 = rays[i as usize].distance
+            * f32::cos(rays[i as usize].ray_angle - player.rotation_angle);
+
+        let distance_proj_plane: f32 = (WINDOW_WIDTH as f32 / 2.0) / f32::tan(FOV_ANGLE / 2.0);
+        let projected_wall_height = (TILE_SIZE as f32 / perp_distance) * distance_proj_plane;
+
+        let wall_strip_height: i32 = projected_wall_height as i32;
+
+        let mut wall_top_pixel: i32 = (WINDOW_HEIGHT as i32 / 2) - (wall_strip_height / 2);
+        wall_top_pixel = if wall_top_pixel < 0 {
+            0
+        } else {
+            wall_top_pixel
+        };
+
+        let mut wall_bottom_pixel: i32 = (WINDOW_HEIGHT as i32 / 2) + (wall_strip_height / 2);
+        wall_bottom_pixel = if wall_bottom_pixel > WINDOW_HEIGHT as i32 {
+            WINDOW_HEIGHT as i32
+        } else {
+            wall_bottom_pixel
+        };
+
+        for j in 0..wall_top_pixel {
+            app.renderer
+                .set_draw_color(Color::RGBA(0x33, 0x33, 0x33, 0xFF));
+            app.renderer
+                .draw_point(Point::new(i as i32, j as i32))
+                .unwrap();
+        }
+
+        for j in wall_top_pixel..wall_bottom_pixel {
+            let color = if rays[i as usize].was_hit_vertical {
+                Color::RGBA(255, 255, 255, 255)
+            } else {
+                Color::RGBA(0xCC, 0xCC, 0xCC, 0xFF)
+            };
+            app.renderer.set_draw_color(color);
+            app.renderer
+                .draw_point(Point::new(i as i32, j as i32))
+                .unwrap();
+            // app.display_buffer[(WINDOW_WIDTH * j as u32 + i) as usize] = 0xFFFFFFFF;
+        }
+
+        for j in wall_bottom_pixel..WINDOW_HEIGHT as i32 {
+            app.renderer
+                .set_draw_color(Color::RGBA(0x77, 0x77, 0x77, 0xFF));
+            app.renderer
+                .draw_point(Point::new(i as i32, j as i32))
+                .unwrap();
+        }
+    }
+}
+
 fn render_display_buffer(app: &mut App) {
     let mut texture = app.display_buffer_texture.borrow_mut();
 
@@ -116,8 +173,9 @@ fn render(app: &mut App, game_state: &mut GameState) {
     app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
     app.renderer.clear();
 
-    render_display_buffer(app);
-    clear_display_buffer(app);
+    generate_projection(app, game_state);
+    // render_display_buffer(app);
+    // clear_display_buffer(app);
 
     game_state.map.render(app);
     game_state.player.render(app);
