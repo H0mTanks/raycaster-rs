@@ -1,6 +1,8 @@
 mod app;
+mod game_state;
 mod map;
 mod player;
+mod ray;
 
 mod prelude {
     pub use sdl2::event::Event;
@@ -32,30 +34,15 @@ mod prelude {
     pub const NUM_TEXTURES: u32 = 8;
 
     pub use crate::app::App;
+    pub use crate::game_state::GameState;
     pub use crate::map::Map;
     pub use crate::player::Player;
+    pub use crate::ray::Ray;
 }
 
 use prelude::*;
 
-const int_map: [u8; (MAP_NUM_ROWS * MAP_NUM_COLS) as usize] = [
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
-    1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1,
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1,
-];
-
-fn process_input(
-    event_pump: &mut EventPump,
-    delta_time: f32,
-    player: &mut Player,
-    is_running: &mut bool,
-) {
+fn process_input(event_pump: &mut EventPump, player: &mut Player, is_running: &mut bool) {
     for event in event_pump.poll_iter() {
         match event {
             Event::Quit { .. } => *is_running = false,
@@ -102,17 +89,12 @@ fn process_input(
     }
 }
 
-fn render(app: &mut App, map: &Map, player: &Player) {
+fn render(app: &mut App, game_state: &GameState) {
     app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
     app.renderer.clear();
 
-    // renderer.set_draw_color(Color::RGBA(155, 0, 0, 255));
-    // let rect: Rect = Rect::new(0, 0, 20, 20);
-    // // renderer.draw_rect(rect).unwrap();
-    // renderer.fill_rect(rect).unwrap();
-
-    map.render(app);
-    player.render(app);
+    game_state.map.render(app);
+    game_state.player.render(app);
 
     app.renderer.present();
 }
@@ -121,8 +103,7 @@ fn main() {
     let mut app = App::new();
     let mut event_pump = app.sdl_context.event_pump().unwrap();
 
-    let mut player = Player::new();
-    let map = Map::new();
+    let mut game_state = GameState::new();
 
     let mut last_frame_time: u32 = 0;
     while app.is_running {
@@ -131,16 +112,11 @@ fn main() {
         let delta_time = (ticks - last_frame_time) as f32 / 1000.0;
         last_frame_time = ticks;
 
-        process_input(
-            &mut event_pump,
-            delta_time,
-            &mut player,
-            &mut app.is_running,
-        );
+        process_input(&mut event_pump, &mut game_state.player, &mut app.is_running);
 
-        player.update(delta_time, &map);
+        game_state.player.update(delta_time, &game_state.map);
         // cast_all_rays();
 
-        render(&mut app, &map, &player);
+        render(&mut app, &game_state);
     }
 }
