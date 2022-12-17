@@ -16,12 +16,19 @@ mod prelude {
     pub use sdl2::Sdl;
     pub use sdl2::TimerSubsystem;
 
+    pub use sdl2::{
+        pixels::PixelFormatEnum,
+        render::{Texture, TextureCreator},
+        video::WindowContext,
+    };
+    pub use std::cell::RefCell;
+
     pub use std::f32::consts::PI;
 
     pub const TILE_SIZE: u32 = 64;
     pub const MAP_NUM_ROWS: u32 = 13;
     pub const MAP_NUM_COLS: u32 = 20;
-    pub const MINIMAP_SCALE_FACTOR: f32 = 1.0;
+    pub const MINIMAP_SCALE_FACTOR: f32 = 0.25;
 
     pub const WINDOW_WIDTH: u32 = MAP_NUM_COLS * TILE_SIZE;
     pub const WINDOW_HEIGHT: u32 = MAP_NUM_ROWS * TILE_SIZE;
@@ -91,9 +98,26 @@ fn process_input(event_pump: &mut EventPump, player: &mut Player, is_running: &m
     }
 }
 
+fn render_display_buffer(app: &mut App) {
+    let mut texture = app.display_buffer_texture.borrow_mut();
+
+    texture
+        .update(None, app.display_buffer_raw(), (WINDOW_WIDTH * 4) as usize)
+        .unwrap();
+
+    app.renderer.copy(&texture, None, None).unwrap();
+}
+
+fn clear_display_buffer(app: &mut App) {
+    app.display_buffer.fill(0xFF000000);
+}
+
 fn render(app: &mut App, game_state: &mut GameState) {
     app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
     app.renderer.clear();
+
+    render_display_buffer(app);
+    clear_display_buffer(app);
 
     game_state.map.render(app);
     game_state.player.render(app);
