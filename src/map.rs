@@ -26,6 +26,11 @@ impl Map {
     }
 
     pub fn get(&self, x: u32, y: u32) -> u8 {
+        // if x >= MAP_NUM_COLS || y >= MAP_NUM_ROWS {
+        //     return 1;
+        // }
+        // println!("{} {}", x, y);
+
         self.data[Map::index(x as usize, y as usize)]
     }
 

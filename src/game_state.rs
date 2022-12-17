@@ -8,10 +8,13 @@ pub struct GameState {
 
 impl GameState {
     pub fn new() -> Self {
+        let mut rays: Vec<Ray> = vec![];
+        rays.reserve_exact(NUM_RAYS as usize);
+
         GameState {
             player: Player::new(),
             map: Map::new(),
-            rays: vec![Ray::new(); NUM_RAYS as usize],
+            rays,
         }
     }
 }

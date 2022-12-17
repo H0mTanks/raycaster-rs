@@ -1,15 +1,13 @@
-use sdl2::rect::Point;
-
 use crate::prelude::*;
 
 pub struct Player {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
     width: f32,
     height: f32,
     turn_direction: i32,
     walk_direction: i32,
-    rotation_angle: f32,
+    pub rotation_angle: f32,
     walk_speed: f32,
     turn_speed: f32,
 }
@@ -24,7 +22,7 @@ impl Player {
             turn_direction: 0,
             walk_direction: 0,
             rotation_angle: PI / 2.0,
-            walk_speed: 100.0,
+            walk_speed: 200.0,
             turn_speed: 45.0 * (PI / 100.0),
         }
     }

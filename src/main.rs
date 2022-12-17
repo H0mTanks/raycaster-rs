@@ -8,12 +8,14 @@ mod prelude {
     pub use sdl2::event::Event;
     pub use sdl2::keyboard::Keycode;
     pub use sdl2::pixels::Color;
+    pub use sdl2::rect::Point;
     pub use sdl2::rect::Rect;
     pub use sdl2::render::Canvas;
     pub use sdl2::video::Window;
     pub use sdl2::EventPump;
     pub use sdl2::Sdl;
     pub use sdl2::TimerSubsystem;
+
     pub use std::f32::consts::PI;
 
     pub const TILE_SIZE: u32 = 64;
@@ -89,12 +91,13 @@ fn process_input(event_pump: &mut EventPump, player: &mut Player, is_running: &m
     }
 }
 
-fn render(app: &mut App, game_state: &GameState) {
+fn render(app: &mut App, game_state: &mut GameState) {
     app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
     app.renderer.clear();
 
     game_state.map.render(app);
     game_state.player.render(app);
+    Ray::render_rays(app, game_state);
 
     app.renderer.present();
 }
@@ -115,8 +118,8 @@ fn main() {
         process_input(&mut event_pump, &mut game_state.player, &mut app.is_running);
 
         game_state.player.update(delta_time, &game_state.map);
-        // cast_all_rays();
+        Ray::cast_all_rays(&mut game_state);
 
-        render(&mut app, &game_state);
+        render(&mut app, &mut game_state);
     }
 }
