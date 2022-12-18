@@ -258,9 +258,8 @@ impl Ray {
     pub fn cast_all_rays(game_state: &mut GameState) {
         let mut ray_angle: f32 = game_state.player.rotation_angle - (FOV_ANGLE / 2.0);
 
-        for _ in 0..NUM_RAYS {
-            let ray = Ray::cast_ray(game_state, ray_angle);
-            game_state.rays.push(ray); //* remember to clear rays after render */
+        for column_id in 0..NUM_RAYS {
+            game_state.rays[column_id as usize] = Ray::cast_ray(game_state, ray_angle); //* remember to clear rays after render */
             ray_angle += FOV_ANGLE / NUM_RAYS as f32;
         }
     }
@@ -268,20 +267,28 @@ impl Ray {
     pub fn render_rays(app: &mut App, game_state: &mut GameState) {
         app.renderer.set_draw_color(Color::RGBA(255, 0, 0, 255));
         for i in 0..NUM_RAYS {
-            app.renderer
-                .draw_line(
-                    Point::new(
-                        (MINIMAP_SCALE_FACTOR * game_state.player.x) as i32,
-                        (MINIMAP_SCALE_FACTOR * game_state.player.y) as i32,
-                    ),
-                    Point::new(
-                        (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_x) as i32,
-                        (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_y) as i32,
-                    ),
-                )
-                .unwrap();
+            // app.renderer
+            //     .draw_line(
+            //         Point::new(
+            //             (MINIMAP_SCALE_FACTOR * game_state.player.x) as i32,
+            //             (MINIMAP_SCALE_FACTOR * game_state.player.y) as i32,
+            //         ),
+            //         Point::new(
+            //             (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_x) as i32,
+            //             (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_y) as i32,
+            //         ),
+            //     )
+            //     .unwrap();
+
+            app.draw_line(
+                (MINIMAP_SCALE_FACTOR * game_state.player.x) as i32,
+                (MINIMAP_SCALE_FACTOR * game_state.player.y) as i32,
+                (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_x) as i32,
+                (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_y) as i32,
+                0xFF0000FF,
+            );
         }
 
-        game_state.rays.clear();
+        // game_state.rays.clear();
     }
 }

@@ -125,32 +125,37 @@ fn generate_projection(app: &mut App, game_state: &GameState) {
         };
 
         for j in 0..wall_top_pixel {
-            app.renderer
-                .set_draw_color(Color::RGBA(0x33, 0x33, 0x33, 0xFF));
-            app.renderer
-                .draw_point(Point::new(i as i32, j as i32))
-                .unwrap();
+            // app.renderer
+            //     .set_draw_color(Color::RGBA(0x33, 0x33, 0x33, 0xFF));
+            // app.renderer
+            //     .draw_point(Point::new(i as i32, j as i32))
+            //     .unwrap();
+
+            app.draw_pixel(i as i32, j as i32, 0xFF333333);
         }
 
         for j in wall_top_pixel..wall_bottom_pixel {
             let color = if rays[i as usize].was_hit_vertical {
-                Color::RGBA(255, 255, 255, 255)
+                // Color::RGBA(255, 255, 255, 255)
+                0xFFFFFFFF
             } else {
-                Color::RGBA(0xCC, 0xCC, 0xCC, 0xFF)
+                // Color::RGBA(0xCC, 0xCC, 0xCC, 0xFF)
+                0xFFCCCCCC
             };
-            app.renderer.set_draw_color(color);
-            app.renderer
-                .draw_point(Point::new(i as i32, j as i32))
-                .unwrap();
-            // app.display_buffer[(WINDOW_WIDTH * j as u32 + i) as usize] = 0xFFFFFFFF;
+            // app.renderer.set_draw_color(color);
+            // app.renderer
+            //     .draw_point(Point::new(i as i32, j as i32))
+            //     .unwrap();
+            app.draw_pixel(i as i32, j as i32, color)
         }
 
         for j in wall_bottom_pixel..WINDOW_HEIGHT as i32 {
-            app.renderer
-                .set_draw_color(Color::RGBA(0x77, 0x77, 0x77, 0xFF));
-            app.renderer
-                .draw_point(Point::new(i as i32, j as i32))
-                .unwrap();
+            // app.renderer
+            //     .set_draw_color(Color::RGBA(0x77, 0x77, 0x77, 0xFF));
+            // app.renderer
+            //     .draw_point(Point::new(i as i32, j as i32))
+            //     .unwrap();
+            app.draw_pixel(i as i32, j as i32, 0xFF777777);
         }
     }
 }
@@ -170,16 +175,17 @@ fn clear_display_buffer(app: &mut App) {
 }
 
 fn render(app: &mut App, game_state: &mut GameState) {
-    app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
-    app.renderer.clear();
+    // app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
+    // app.renderer.clear();
+    clear_display_buffer(app);
 
     generate_projection(app, game_state);
-    // render_display_buffer(app);
-    // clear_display_buffer(app);
 
     game_state.map.render(app);
     game_state.player.render(app);
     Ray::render_rays(app, game_state);
+
+    render_display_buffer(app);
 
     app.renderer.present();
 }

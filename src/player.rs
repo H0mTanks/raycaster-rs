@@ -35,23 +35,39 @@ impl Player {
         let scaled_width = self.width * MINIMAP_SCALE_FACTOR;
         let scaled_height = self.height * MINIMAP_SCALE_FACTOR;
 
-        let player_rect = Rect::new(
-            (scaled_x - scaled_width / 2.0) as i32,
-            (scaled_y - scaled_height / 2.0) as i32,
-            scaled_width as u32,
-            scaled_height as u32,
+        // let player_rect = Rect::new(
+        //     (scaled_x - scaled_width / 2.0) as i32,
+        //     (scaled_y - scaled_height / 2.0) as i32,
+        //     scaled_width as u32,
+        //     scaled_height as u32,
+        // );
+
+        // app.renderer
+        //     .draw_line(
+        //         Point::new(scaled_x as i32, scaled_y as i32),
+        //         Point::new(
+        //             (scaled_x + f32::cos(self.rotation_angle) * 40.0) as i32,
+        //             (scaled_y + f32::sin(self.rotation_angle) * 40.0) as i32,
+        //         ),
+        //     )
+        //     .unwrap();
+        // app.renderer.fill_rect(player_rect).unwrap();
+
+        app.draw_line(
+            scaled_x as i32,
+            scaled_y as i32,
+            (scaled_x + f32::cos(self.rotation_angle) * 40.0) as i32,
+            (scaled_y + f32::sin(self.rotation_angle) * 40.0) as i32,
+            0xFFFFFFFF,
         );
 
-        app.renderer
-            .draw_line(
-                Point::new(scaled_x as i32, scaled_y as i32),
-                Point::new(
-                    (scaled_x + f32::cos(self.rotation_angle) * 40.0) as i32,
-                    (scaled_y + f32::sin(self.rotation_angle) * 40.0) as i32,
-                ),
-            )
-            .unwrap();
-        app.renderer.fill_rect(player_rect).unwrap();
+        app.draw_fill_rect(
+            (scaled_x - scaled_width / 2.0) as i32,
+            (scaled_y - scaled_height / 2.0) as i32,
+            scaled_width as i32,
+            scaled_height as i32,
+            0xFFFFFFFF,
+        );
     }
 
     pub fn update_walk_direction(&mut self, walk_direction: i32) {
