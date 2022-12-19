@@ -7,6 +7,7 @@ pub struct App<'a> {
     pub display_buffer: Vec<u32>,
     pub texture_creator: TextureCreator<WindowContext>,
     pub display_buffer_texture: RefCell<Texture<'a>>,
+    pub wall_texture: Vec<u32>,
     pub is_running: bool,
 }
 
@@ -42,6 +43,18 @@ impl<'a> App<'a> {
         let display_buffer_texture =
             unsafe { std::mem::transmute::<_, Texture<'a>>(display_buffer_texture) };
 
+        let mut wall_texture: Vec<u32> = vec![0; (TEXTURE_WIDTH * TEXTURE_HEIGHT) as usize];
+        for x in 0..TEXTURE_WIDTH {
+            for y in 0..TEXTURE_HEIGHT {
+                wall_texture[(TEXTURE_WIDTH * y + x) as usize] = if ((x % 8) != 0) && ((y % 8) != 0)
+                {
+                    0xFFFF0000
+                } else {
+                    0xFF000000
+                };
+            }
+        }
+
         App {
             sdl_context,
             timer,
@@ -49,6 +62,7 @@ impl<'a> App<'a> {
             display_buffer,
             texture_creator,
             display_buffer_texture: RefCell::new(display_buffer_texture),
+            wall_texture,
             is_running: true,
         }
     }

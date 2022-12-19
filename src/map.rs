@@ -34,6 +34,7 @@ impl Map {
         self.data[Map::index(x as usize, y as usize)]
     }
 
+    #[allow(dead_code)]
     pub fn set(&mut self, x: u32, y: u32, val: u8) {
         self.data[Map::index(x as usize, y as usize)] = val;
     }

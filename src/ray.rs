@@ -267,19 +267,6 @@ impl Ray {
     pub fn render_rays(app: &mut App, game_state: &mut GameState) {
         app.renderer.set_draw_color(Color::RGBA(255, 0, 0, 255));
         for i in 0..NUM_RAYS {
-            // app.renderer
-            //     .draw_line(
-            //         Point::new(
-            //             (MINIMAP_SCALE_FACTOR * game_state.player.x) as i32,
-            //             (MINIMAP_SCALE_FACTOR * game_state.player.y) as i32,
-            //         ),
-            //         Point::new(
-            //             (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_x) as i32,
-            //             (MINIMAP_SCALE_FACTOR * game_state.rays[i as usize].wall_hit_y) as i32,
-            //         ),
-            //     )
-            //     .unwrap();
-
             app.draw_line(
                 (MINIMAP_SCALE_FACTOR * game_state.player.x) as i32,
                 (MINIMAP_SCALE_FACTOR * game_state.player.y) as i32,
@@ -288,7 +275,5 @@ impl Ray {
                 0xFF0000FF,
             );
         }
-
-        // game_state.rays.clear();
     }
 }

@@ -35,12 +35,10 @@ mod prelude {
 
     pub const FOV_ANGLE: f32 = 60.0 * (PI / 180.0);
 
-    pub const WALL_STRIP_WIDTH: u32 = 1;
     pub const NUM_RAYS: u32 = WINDOW_WIDTH;
 
     pub const TEXTURE_WIDTH: u32 = TILE_SIZE;
     pub const TEXTURE_HEIGHT: u32 = TILE_SIZE;
-    pub const NUM_TEXTURES: u32 = 8;
 
     pub use crate::app::App;
     pub use crate::game_state::GameState;
@@ -125,36 +123,27 @@ fn generate_projection(app: &mut App, game_state: &GameState) {
         };
 
         for j in 0..wall_top_pixel {
-            // app.renderer
-            //     .set_draw_color(Color::RGBA(0x33, 0x33, 0x33, 0xFF));
-            // app.renderer
-            //     .draw_point(Point::new(i as i32, j as i32))
-            //     .unwrap();
-
             app.draw_pixel(i as i32, j as i32, 0xFF333333);
         }
 
+        let texture_offset_x: i32 = if rays[i as usize].was_hit_vertical {
+            rays[i as usize].wall_hit_y as i32 % TILE_SIZE as i32
+        } else {
+            rays[i as usize].wall_hit_x as i32 % TILE_SIZE as i32
+        };
+
         for j in wall_top_pixel..wall_bottom_pixel {
-            let color = if rays[i as usize].was_hit_vertical {
-                // Color::RGBA(255, 255, 255, 255)
-                0xFFFFFFFF
-            } else {
-                // Color::RGBA(0xCC, 0xCC, 0xCC, 0xFF)
-                0xFFCCCCCC
-            };
-            // app.renderer.set_draw_color(color);
-            // app.renderer
-            //     .draw_point(Point::new(i as i32, j as i32))
-            //     .unwrap();
-            app.draw_pixel(i as i32, j as i32, color)
+            let distance_from_top = j + (wall_strip_height / 2) - (WINDOW_HEIGHT as i32 / 2);
+            let texture_offset_y = (distance_from_top as f32
+                * (TEXTURE_HEIGHT as f32 / wall_strip_height as f32))
+                as i32;
+            let texel_color = app.wall_texture
+                [(TEXTURE_WIDTH as i32 * texture_offset_y + texture_offset_x) as usize];
+
+            app.draw_pixel(i as i32, j as i32, texel_color)
         }
 
         for j in wall_bottom_pixel..WINDOW_HEIGHT as i32 {
-            // app.renderer
-            //     .set_draw_color(Color::RGBA(0x77, 0x77, 0x77, 0xFF));
-            // app.renderer
-            //     .draw_point(Point::new(i as i32, j as i32))
-            //     .unwrap();
             app.draw_pixel(i as i32, j as i32, 0xFF777777);
         }
     }
@@ -175,8 +164,6 @@ fn clear_display_buffer(app: &mut App) {
 }
 
 fn render(app: &mut App, game_state: &mut GameState) {
-    // app.renderer.set_draw_color(Color::RGBA(0, 0, 0, 255));
-    // app.renderer.clear();
     clear_display_buffer(app);
 
     generate_projection(app, game_state);
